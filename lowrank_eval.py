@@ -505,10 +505,6 @@ def train():
         best_epoch, best_train_loss, best_vali_loss, best_test_loss, best_vali_mae, best_test_mae
     ))
 
-    # dict_args = vars(args)
-    # dict_args['best_test_loss'] = best_test_loss
-    # df = df.append(dict_args, ignore_index=True)
-    # df.to_csv(args.ablation_csv_path, index=False)
     ratio_path = os.path.join('./results/atts', expname)
     if not os.path.exists(ratio_path):
         os.makedirs(ratio_path)
