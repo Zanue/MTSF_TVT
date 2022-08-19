@@ -6,7 +6,6 @@ from torch import optim
 from models.evolution.TransformerEvolution import Transformer_ChannelTokens_noSeg, Transformer_TimeTokens_noSeg
 from models.evolution.MLP import MLPMixer
 from models.evolution.modules.settings import get_lr
-from models.tit.TiTEvolution import TiTEvolution
 from torch import nn
 import time
 import numpy as np
@@ -206,13 +205,6 @@ elif args.model_type == 'Transformer_TimeTokens_noSeg':
         .format(args.data_path[:-4], args.model_type, args.exp_name[:4], \
             args.exp_name[5:], args.embedding, args.dec_name, \
                 args.features, args.seq_len, args.d_model, args.pred_len-args.beyond_len, args.learning_rate, args.dropout, args.train_epochs)
-
-elif args.model_type.lower() == 'tit':
-    model = TiTEvolution(args)
-    expname = '{}/{}/{}/{}_{}_{}_{}_{}_in{}d{}out{}_lr{}_epoch{}' \
-        .format(args.data_path[:-4], args.model_type, args.exp_name[:4], \
-            args.exp_name[5:], args.pre_embed, args.attentionlayer, args.timelayer, args.features, args.seq_len, args.d_model, args.pred_len, \
-                args.learning_rate, args.train_epochs)
 
 
 else:
