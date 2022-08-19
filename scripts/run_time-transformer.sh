@@ -20,9 +20,9 @@ do
             --dec_self=att \
             --dec_cross=att \
             --embedding=all \
-            --ablation_csv_path=exp_settings/0813_1100_final_TimeTokens_transformer.csv \
+            --ablation_csv_path=exp_settings/final_TimeTokens_transformer.csv \
             --save_ckpt \
-            --exp_name=0813_1100_final
+            --exp_name=final
     done
 done
 
@@ -39,8 +39,8 @@ do
             --e_layers=2 \
             --d_layers=1 --n_heads=1 --dropout=0.05 --d_model=512 \
             --dec_name=transformer --dec_self=att --dec_cross=att --embedding=all \
-            --ablation_csv_path=exp_settings/0813_1100_final_TimeTokens_transformer.csv \
+            --ablation_csv_path=exp_settings/final_TimeTokens_transformer.csv \
             --save_ckpt \
-            --exp_name=0813_1100_final
+            --exp_name=final
     done
 done

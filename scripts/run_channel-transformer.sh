@@ -23,9 +23,9 @@ do
             --dec_self=att \
             --dec_cross=att \
             --embedding=none \
-            --ablation_csv_path=exp_settings/0814_2200_final_ChannelTokens_transformer_noneEmbed.csv \
+            --ablation_csv_path=exp_settings/final_ChannelTokens_transformer_noneEmbed.csv \
             --save_ckpt \
-            --exp_name=0814_2200_final_noneEmbed
+            --exp_name=final_noneEmbed
     done
 done
 
@@ -50,8 +50,8 @@ do
             --dec_self=att \
             --dec_cross=att \
             --embedding=te \
-            --ablation_csv_path=exp_settings/0813_1100_final_ChannelTokens_transformer.csv \
+            --ablation_csv_path=exp_settings/final_ChannelTokens_transformer.csv \
             --save_ckpt \
-            --exp_name=0813_1100_final
+            --exp_name=final
     done
 done

@@ -3,8 +3,8 @@ import pandas as pd
 import torch
 from data_provider.data_factory import data_provider
 from torch import optim
-from models.evolution.TransformerEvolution import Transformer_TimeTokens, Transformer_ChannelTokens, Transformer_ChannelTokens_noSeg, Transformer_TimeTokens_noSeg
-from models.evolution.MLP import MLPMixer, MLP_ChannelTokens, MLP_TimeTokens
+from models.evolution.TransformerEvolution import Transformer_ChannelTokens_noSeg, Transformer_TimeTokens_noSeg
+from models.evolution.MLP import MLPMixer
 from models.evolution.modules.settings import get_lr
 from models.tit.TiTEvolution import TiTEvolution
 from torch import nn
@@ -17,7 +17,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.pyplot import plot_seq_feature
 from thop import profile
 from thop import clever_format
-from utils.tool import setup_seed, setup_seed_new
+from utils.tool import setup_seed_new
 from time import sleep
 setup_seed_new()
 
@@ -30,11 +30,6 @@ parser.add_argument('--device', type=int, default=0, help='gpu dvice')
 
 #method choose
 parser.add_argument('--exp_name', type=str, default='baseline', help='Experiment name')
-# parser.add_argument('--model_type', type=str,choices=['TCN', 'MLP_ChannelTokens','MLP_TimeTokens', \
-#     'MLPMixer', 'Transformer_ChannelTokens', 'Transformer_TimeTokens', 'lstm', 'rnn', 'linear', \
-#     'swin_Transformer', 'swin_MLP', 'Transformer_MLP', 'FEDformer_MLP', 'DLinear', 'Transformer_SegmentTokens', \
-#         'Transformer_Attention', 'Mixformer', 'TiT'], \
-#     default='MLP', help='model type')
 parser.add_argument('--model_type', type=str, default='MLP', help='model type')
 
 # data loader
@@ -178,8 +173,6 @@ args.root_path, args.data_path, args.data, args.seq_len, args.label_len, \
 if args.features == 'S':
     args.enc_in = args.dec_in = args.c_out = 1
 args.pred_len, args.beyond_len = get_predlen(args)
-# Dangerous equation!
-# args.d_model = args.enc_in
 # learning rate
 args.learning_rate = get_lr(args)
 
@@ -197,28 +190,6 @@ if args.model_type == 'MLPMixer':
             args.exp_name[5:], args.features, args.seq_len, args.d_model, args.pred_len, \
                 args.learning_rate, args.dropout, args.train_epochs)
 
-elif args.model_type == 'MLP_ChannelTokens':
-    model = MLP_ChannelTokens(args.seq_len,args.pred_len, middle=args.middle)
-    expname = '{}/{}/{}_{}_in{}out{}_lr{}_bs{}_middle{}_epoch{}' \
-        .format(args.data_path[:-4], args.model_type, \
-            args.exp_name, args.features, args.seq_len, args.pred_len, \
-                args.learning_rate, args.batch_size,args.middle, args.train_epochs)
-
-elif args.model_type == 'MLP_TimeTokens':
-    model = MLP_TimeTokens(args.seq_len,args.pred_len, num_channels=args.enc_in, middle=args.middle)
-    expname = '{}/{}/{}_{}_in{}out{}_lr{}_bs{}_middle_{}epoch{}' \
-        .format(args.data_path[:-4], args.model_type, \
-            args.exp_name, args.features, args.seq_len, args.pred_len, \
-                args.learning_rate, args.batch_size,args.middle, args.train_epochs)
-
-
-elif args.model_type == 'Transformer_ChannelTokens':
-    model = Transformer_ChannelTokens(args)
-    expname = '{}/{}/{}/{}_Embed-{}_Seg{}_Dec-{}_{}_in{}out{}_lr{}_dropout{}_epoch{}' \
-        .format(args.data_path[:-4], args.model_type, args.exp_name[:4], \
-            args.exp_name[5:], args.embedding, args.segment_len, args.dec_name, \
-                args.features, args.seq_len, args.pred_len-args.beyond_len, args.learning_rate, args.dropout, args.train_epochs)
-
 
 elif args.model_type == 'Transformer_ChannelTokens_noSeg':
     model = Transformer_ChannelTokens_noSeg(args)
@@ -227,13 +198,6 @@ elif args.model_type == 'Transformer_ChannelTokens_noSeg':
             args.exp_name[5:], args.embedding, args.dec_name, \
                 args.features, args.seq_len, args.d_model, args.pred_len-args.beyond_len, args.learning_rate, args.dropout, args.train_epochs)
 
-
-elif args.model_type == 'Transformer_TimeTokens':
-    model = Transformer_TimeTokens(args)
-    expname = '{}/{}/{}/{}_Embed-{}_Seg{}_Dec-{}_{}_in{}out{}_lr{}_dropout{}_epoch{}' \
-        .format(args.data_path[:-4], args.model_type, args.exp_name[:4], \
-            args.exp_name[5:], args.embedding, args.segment_len, args.dec_name, \
-                args.features, args.seq_len, args.pred_len-args.beyond_len, args.learning_rate, args.dropout, args.train_epochs)
 
 
 elif args.model_type == 'Transformer_TimeTokens_noSeg':
@@ -452,11 +416,6 @@ def train():
         best_epoch, best_train_loss, best_vali_loss, best_test_loss, best_vali_mae, best_test_mae
     ))
 
-    # dict_args = vars(args)
-    # dict_args['best_test_loss'] = best_test_loss
-    # df = df.append(dict_args, ignore_index=True)
-    # df.to_csv(args.ablation_csv_path, index=False)
-
 
     return best_test_loss,best_test_mae, best_epoch
 
@@ -538,37 +497,6 @@ def test(setting='setting',test=1):
 
     return
 
-
-def model_test():
-    test_data, test_loader = data_provider(args,flag='test')
-    print('-------------------loading model-------------------')
-    model.load_state_dict(torch.load(os.path.join(args.check_point, expname, 'valid_best_checkpoint.pth')))
-
-    folder_path = os.path.join('./results', expname)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-    model.eval()
-    with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
-            batch_x = batch_x.float().to(device)
-    
-            # speed test
-            with torch.autograd.profiler.profile(enabled=True, use_cuda=True, record_shapes=False, profile_memory=False) as prof:
-                outputs = model(batch_x)
-            print(prof.table())
-            prof.export_chrome_trace(folder_path + '/profile{}.json'.format(i))
-
-            input = batch_x
-            flops, params = profile(model, inputs=(input,))
-            flops, params = clever_format([flops, params], "%.3f")
-            print("step{} | flops: {}, params: {}".format(i, flops, params))
-            with open(folder_path + '/model_test.txt','a') as f:
-                f.writelines('step{} | flops: {}, params: {} \n'.format(i, flops, params))
-
-            if i == 1:
-                break
-
 #main
 best_test_loss, best_test_mae, best_epoch = train()
 dict_args = vars(args)
@@ -582,7 +510,6 @@ else:
     df = pd.DataFrame()
 df = df.append(dict_args, ignore_index=True)
 df.to_csv(args.ablation_csv_path, index=False)
-# model_test()
 # test()
 
 

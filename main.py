@@ -14,16 +14,13 @@ from models.evolution.TransformerEvolution import Transformer_TimeTokens_noSeg, 
 from torch import nn
 import time
 import numpy as np
-from utils.tool import adjust_learning_rate,metric,visual, get_datainfo, EarlyStopping, get_predlen
+from utils.tool import adjust_learning_rate,metric, get_datainfo, EarlyStopping, get_predlen
 import os
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from utils.pyplot import plot_seq_feature
-from thop import profile
-from thop import clever_format
-from utils.tool import setup_seed, setup_seed_new
+from utils.tool import setup_seed_new
 from models.evolution.modules.settings import get_lr
-from torchsummary import summary
 
 setup_seed_new()
 
@@ -36,11 +33,6 @@ parser.add_argument('--device', type=int, default=0, help='gpu dvice')
 
 #method choose
 parser.add_argument('--exp_name', type=str, default='baseline', help='Experiment name')
-# parser.add_argument('--model_type', type=str,choices=['TCN', 'MLP_ChannelTokens','MLP_TimeTokens', \
-#     'MLPMixer', 'Transformer_ChannelTokens', 'Transformer_TimeTokens', 'lstm', 'rnn', 'linear', \
-#     'swin_Transformer', 'swin_MLP', 'Transformer_MLP', 'FEDformer_MLP', 'DLinear', 'Transformer_SegmentTokens', \
-#         'Transformer_Attention', 'Mixformer', 'TiT'], \
-#     default='MLP', help='model type')
 parser.add_argument('--model_type', type=str, default='MLP', help='model type')
 
 # data loader
@@ -185,8 +177,6 @@ args.root_path, args.data_path, args.data, args.seq_len, args.label_len, \
 args.pred_len, beyond_len = get_predlen(args)
 if args.features == 'S':
     args.enc_in = args.dec_in = args.c_out = 1
-# Dangerous equation!
-# args.d_model = args.enc_in
 # learning rate
 args.learning_rate = get_lr(args)
 
@@ -476,11 +466,6 @@ def train():
         best_epoch, best_train_loss, best_vali_loss, best_test_loss
     ))
 
-    # dict_args = vars(args)
-    # dict_args['best_test_loss'] = best_test_loss
-    # df = df.append(dict_args, ignore_index=True)
-    # df.to_csv(args.ablation_csv_path, index=False)
-
 
     return best_test_loss, best_epoch
 
@@ -569,50 +554,19 @@ def test(setting='setting',test=1):
     return
 
 
-def model_test():
-    test_data, test_loader = data_provider(args,flag='test')
-    print('-------------------loading model-------------------')
-    model.load_state_dict(torch.load(os.path.join(args.check_point, expname, 'valid_best_checkpoint.pth')))
-
-    folder_path = os.path.join('./results', expname)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-
-    model.eval()
-    with torch.no_grad():
-        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
-            batch_x = batch_x.float().to(device)
-    
-            # speed test
-            with torch.autograd.profiler.profile(enabled=True, use_cuda=True, record_shapes=False, profile_memory=False) as prof:
-                outputs = model(batch_x)
-            print(prof.table())
-            prof.export_chrome_trace(folder_path + '/profile{}.json'.format(i))
-
-            input = batch_x
-            flops, params = profile(model, inputs=(input,))
-            flops, params = clever_format([flops, params], "%.3f")
-            print("step{} | flops: {}, params: {}".format(i, flops, params))
-            with open(folder_path + '/model_test.txt','a') as f:
-                f.writelines('step{} | flops: {}, params: {} \n'.format(i, flops, params))
-
-            if i == 1:
-                break
-
 #main
-# best_test_loss, best_epoch = train()
-# dict_args = vars(args)
-# dict_args['best_test_loss'] = best_test_loss
-# dict_args['best_epoch'] = best_epoch
-# df = None
-# if os.path.isfile(args.ablation_csv_path):
-#     df = pd.read_csv(args.ablation_csv_path)
-# else:
-#     df = pd.DataFrame()
-# df = df.append(dict_args, ignore_index=True)
-# df.to_csv(args.ablation_csv_path, index=False)
-# model_test()
-test()
+best_test_loss, best_epoch = train()
+dict_args = vars(args)
+dict_args['best_test_loss'] = best_test_loss
+dict_args['best_epoch'] = best_epoch
+df = None
+if os.path.isfile(args.ablation_csv_path):
+    df = pd.read_csv(args.ablation_csv_path)
+else:
+    df = pd.DataFrame()
+df = df.append(dict_args, ignore_index=True)
+df.to_csv(args.ablation_csv_path, index=False)
+# test()
 
 
 

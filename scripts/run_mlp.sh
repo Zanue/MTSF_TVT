@@ -10,8 +10,8 @@ do
             --factor=3 --d_model=96 \
             --pre_embed=none --attentionlayer=none --timelayer=mlp \
             --dec_name=linear --dec_self=att --dec_cross=att --embedding=none \
-            --ablation_csv_path=exp_settings/0815_2100_final_mlp.csv \
+            --ablation_csv_path=exp_settings/final_mlp.csv \
             --save_ckpt \
-            --exp_name=0815_2100_final_mlp
+            --exp_name=final_mlp
     done
 done
